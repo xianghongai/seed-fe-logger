@@ -1,0 +1,69 @@
+{
+  "name": "@seed-fe/logger",
+  "version": "1.0.0",
+  "description": "A powerful and flexible logger library",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsup --watch",
+    "check": "biome check --write",
+    "format": "biome format --write",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "logger",
+    "log",
+    "console",
+    "debug",
+    "trace",
+    "info",
+    "warn",
+    "error"
+  ],
+  "author": "xianghongai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xianghongai/seed-fe-logger.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xianghongai/seed-fe-logger/issues"
+  },
+  "homepage": "https://github.com/xianghongai/seed-fe-logger#readme",
+  "packageManager": "pnpm@10.6.5",
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "loglevel": "^1.9.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
