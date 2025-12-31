@@ -22,7 +22,9 @@ export interface LoggerConfig {
   storageKey?: string | null;
 
   /**
-   * 是否允许通过 setLevel(level, true) 持久化日志级别
+   * 是否允许持久化日志级别到 localStorage
+   * 为 false 时，即便调用 setLevel(level, true) 也不会写入 localStorage
+   * 默认为 true
    */
   enablePersistence?: boolean;
 }

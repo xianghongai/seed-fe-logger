@@ -3,6 +3,9 @@ import { getConfig, getCurrentLevel, setCurrentLevel } from './config';
 import { levelEnumToString, levelStringToEnum } from './level-converter';
 import type { Logger, LogLevelDesc } from './types';
 
+// 维护所有创建的 loglevel logger 实例，用于全局级别同步
+const allLoggers = new Set<originalLog.Logger>();
+
 /**
  * 创建日志记录器
  * @param name 日志记录器名称，默认为空
@@ -12,8 +15,12 @@ export const createLogger = (name = ''): Logger => {
   const loggerName = name || 'default';
   const internalLogger = name ? originalLog.getLogger(loggerName) : originalLog;
 
+  // 将 logger 加入集合，用于全局级别同步
+  allLoggers.add(internalLogger);
+
   // 初始化 logger 的日志级别为当前全局级别
-  internalLogger.setLevel(levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers);
+  // 禁用 loglevel 的内置持久化（传 false），由自己的逻辑控制
+  internalLogger.setLevel(levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers, false);
 
   // 如果是具名 logger，设置前缀
   if (name) {
@@ -26,7 +33,8 @@ export const createLogger = (name = ''): Logger => {
     };
 
     // 应用方法工厂更改
-    internalLogger.setLevel(internalLogger.getLevel());
+    // 禁用 loglevel 的内置持久化（传 false）
+    internalLogger.setLevel(internalLogger.getLevel(), false);
   }
 
   // 创建符合 Logger 接口的对象
@@ -42,10 +50,12 @@ export const createLogger = (name = ''): Logger => {
       // 更新全局级别
       setCurrentLevel(levelStr);
 
-      // 同步到 loglevel（会自动同步所有子 logger）
-      originalLog.setLevel(numLevel as originalLog.LogLevelNumbers);
+      // 同步到所有 logger 实例 - 禁用 loglevel 的持久化
+      for (const loggerInstance of allLoggers) {
+        loggerInstance.setLevel(numLevel as originalLog.LogLevelNumbers, false);
+      }
 
-      // 持久化到 localStorage
+      // 持久化到 localStorage（由自己的逻辑控制）
       const config = getConfig();
       if (persistent && config.enablePersistence && config.storageKey && typeof localStorage !== 'undefined') {
         try {

@@ -325,6 +325,14 @@ let currentLevel: LogLevelDesc = 'INFO';  // 全局唯一
 
 这让内部模块可以安全地访问全局状态，而不直接暴露变量。
 
+**访问限制**
+
+`currentLevel` 只通过本库的 API 更新：
+- 启动时 `applyConfig()`
+- 调用 `setLevel()` 时
+
+**重要提示**：用户应只通过本库的 API 调整日志级别。如果直接调用 loglevel 的 API（如 `window.log.setLevel()`），会导致状态不一致。
+
 ### 3.2 API 设计哲学
 
 **最小惊讶原则（Principle of Least Astonishment）**
@@ -546,6 +554,19 @@ API 行为符合开发者直觉，避免令人困惑的设计。
 - **APM 性能监控** → New Relic, Datadog
 
 这些是专业工具的领域，@seed-fe/logger 不尝试替代它们。
+
+**全局变量的副作用说明**
+
+库在浏览器环境中自动挂载 `window.__SEED_FE_LOGGER__`（位于 `src/index.ts:14-23`），这是一个有意为之的顶层副作用，用于：
+- 方便在生产环境通过 DevTools Console 临时调试
+- 无需修改代码即可调整日志级别
+
+副作用影响：
+- 打包器无法完全 tree-shake 该模块
+- 对包体积影响较小（库本身仅 ~4KB）
+- 如果应用极度敏感于包体积，可通过打包器的 `sideEffects` 配置优化
+
+这是在"开发体验"与"包体积"之间的权衡选择，符合库的设计哲学："实用胜于完美"。
 
 ## 6. 总结
 

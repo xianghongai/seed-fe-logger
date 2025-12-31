@@ -34,7 +34,8 @@ const applyConfig = (): void => {
 
   currentLevel = nextLevel;
   // 同步到默认 loglevel 实例
-  originalLog.setLevel(levelStringToEnum(currentLevel) as originalLog.LogLevelNumbers);
+  // 禁用 loglevel 的内置持久化（传 false），由自己的逻辑控制
+  originalLog.setLevel(levelStringToEnum(currentLevel) as originalLog.LogLevelNumbers, false);
 };
 
 /**
