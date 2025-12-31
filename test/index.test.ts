@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import logger, {
-  configureLogger,
-  createLogger,
-  LogLevel,
-  type LogLevelDesc,
-} from '../src';
+import logger, { configureLogger, createLogger, type LogLevelDesc } from '../src';
 import { mockLocalStorage } from './helpers';
 
 describe('Logger 模块测试', () => {

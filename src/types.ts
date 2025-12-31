@@ -7,6 +7,36 @@ export const LogLevel = log.levels;
 export type LogLevelDesc = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
 
 /**
+ * 日志配置
+ */
+export interface LoggerConfig {
+  /**
+   * localStorage 中没有值或值非法时使用的默认日志级别
+   */
+  defaultLevel?: LogLevelDesc;
+
+  /**
+   * 持久化日志级别时使用的 localStorage key
+   * 传入 null 可以关闭基于 localStorage 的持久化与魔法值能力
+   */
+  storageKey?: string | null;
+
+  /**
+   * 是否允许通过 setLevel(level, true) 持久化日志级别
+   */
+  enablePersistence?: boolean;
+}
+
+/**
+ * 内部日志配置（所有字段必填）
+ */
+export interface InternalLoggerConfig {
+  defaultLevel: LogLevelDesc;
+  storageKey: string | null;
+  enablePersistence: boolean;
+}
+
+/**
  * 日志记录器接口
  */
 export interface Logger {

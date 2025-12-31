@@ -1,6 +1,6 @@
 {
   "name": "@seed-fe/logger",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A powerful and flexible logger library",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -19,9 +19,9 @@
   ],
   "scripts": {
     "dev": "tsup --watch",
+    "build": "tsup",
     "check": "biome check --write",
     "format": "biome format --write",
-    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
