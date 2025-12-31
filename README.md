@@ -111,3 +111,33 @@ __SEED_FE_LOGGER__.setLevel('ERROR')
 // 关闭所有日志
 __SEED_FE_LOGGER__.setLevel('SILENT')
 ```
+
+## 高级配置
+
+### 配置全局行为
+
+在应用启动时，可以通过 `configureLogger` 配置全局行为：
+
+```typescript
+import { configureLogger } from '@seed-fe/logger';
+
+configureLogger({
+  // 默认日志级别（当 localStorage 无值时使用）
+  defaultLevel: 'ERROR',
+
+  // 持久化的 localStorage key（设为 null 可完全禁用持久化）
+  storageKey: '@my-app/logger:level',
+
+  // 是否允许持久化（为 false 时即使调用 setLevel(level, true) 也不会写入）
+  enablePersistence: false,
+});
+```
+
+更多设计细节和架构说明，请参阅 [DESIGN_NOTES.md](./DESIGN_NOTES.md)。
+
+## Tree-shaking 说明
+
+本库在浏览器环境中会自动暴露全局变量 `window.__SEED_FE_LOGGER__`，这是一个有意为之的顶层副作用，用于方便生产环境调试。
+
+某些打包器在极度激进的 tree-shaking 配置下可能会保留该模块。如果你的应用对包体积极度敏感，可以配置打包器的 `sideEffects` 字段来优化。
+

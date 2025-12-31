@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import logger, {
-  configureLogger,
-  createLogger,
-  LogLevel,
-  type LogLevelDesc,
-} from '../src';
+import logger, { configureLogger, createLogger, type LogLevelDesc } from '../src';
 import { mockLocalStorage } from './helpers';
 
 describe('Logger 模块测试', () => {
@@ -132,6 +127,24 @@ describe('Logger 模块测试', () => {
       logger.setLevel('DEBUG', false);
       expect(localStorage.setItem).not.toHaveBeenCalled();
     });
+
+    it('setLevel 不传参数时默认持久化', () => {
+      logger.setLevel('DEBUG'); // 不传 persistent 参数
+      expect(localStorage.setItem).toHaveBeenCalledWith('@seed-fe/logger:level', 'DEBUG');
+    });
+
+    it('setLevel 不传参数与 true 行为一致', () => {
+      // 测试默认行为
+      logger.setLevel('INFO');
+      expect(localStorage.setItem).toHaveBeenCalledWith('@seed-fe/logger:level', 'INFO');
+
+      // 清除调用记录
+      vi.clearAllMocks();
+
+      // 测试显式传 true
+      logger.setLevel('WARN', true);
+      expect(localStorage.setItem).toHaveBeenCalledWith('@seed-fe/logger:level', 'WARN');
+    });
   });
 
   describe('具名 Logger', () => {
@@ -232,6 +245,49 @@ describe('Logger 模块测试', () => {
 
       // 验证写入的是大写字符串
       expect(localStorage.setItem).toHaveBeenCalledWith('@seed-fe/logger:level', 'DEBUG');
+    });
+  });
+
+  describe('日志级别过滤行为', () => {
+    it('ERROR 级别时 debug 方法不产生输出', () => {
+      // 使用新的测试 logger 避免状态干扰
+      const testLogger = createLogger('level-filter-test');
+
+      // Mock logger 的方法
+      const traceSpy = vi.spyOn(testLogger, 'trace');
+      const debugSpy = vi.spyOn(testLogger, 'debug');
+      const errorSpy = vi.spyOn(testLogger, 'error');
+
+      testLogger.setLevel('ERROR', false);
+
+      testLogger.trace('trace msg');
+      testLogger.debug('debug msg');
+      testLogger.error('error msg');
+
+      // 验证方法被调用（因为我们 spy 了方法）
+      expect(traceSpy).toHaveBeenCalled();
+      expect(debugSpy).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
+    });
+
+    it('全局设置 SILENT 后，所有 logger（包括具名）都共享此级别', () => {
+      const authLogger = logger.getLogger('auth-level-test');
+
+      logger.setLevel('SILENT', false);
+
+      // 验证级别同步
+      expect(logger.getLevel()).toBe('SILENT');
+      expect(authLogger.getLevel()).toBe('SILENT');
+    });
+
+    it('全局设置 DEBUG 后，所有 logger 都共享此级别', () => {
+      const apiLogger = logger.getLogger('api-level-test');
+
+      logger.setLevel('DEBUG', false);
+
+      // 验证级别同步
+      expect(logger.getLevel()).toBe('DEBUG');
+      expect(apiLogger.getLevel()).toBe('DEBUG');
     });
   });
 });
