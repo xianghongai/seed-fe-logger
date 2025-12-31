@@ -2,7 +2,7 @@ name: Release
 run-name: Release ${{ github.ref_name }}
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 on:
@@ -14,7 +14,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -26,6 +26,7 @@ jobs:
           node-version: lts/*
           cache: pnpm
           registry-url: https://registry.npmjs.org
+          scope: '@seed-fe'
 
       - name: Install dependencies
         run: pnpm install
@@ -33,8 +34,21 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          if [[ "${{ github.ref_name }}" == *"alpha"* ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == *"beta"* ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == *"rc"* ]]; then
+            echo "tag=rc" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to NPM
-        run: pnpm publish --access public --no-git-checks
+        run: pnpm publish --access public --no-git-checks --tag ${{ steps.npm-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_PROVENANCE: false

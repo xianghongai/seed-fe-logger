@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import logger, { createLogger, LogLevel } from '../src';
+import logger, {
+  configureLogger,
+  createLogger,
+  LogLevel,
+  type LogLevelDesc,
+} from '../src';
 import { mockLocalStorage } from './helpers';
 
 describe('Logger 模块测试', () => {
@@ -14,6 +19,13 @@ describe('Logger 模块测试', () => {
     vi.spyOn(logger, 'info').mockImplementation(() => {});
     vi.spyOn(logger, 'warn').mockImplementation(() => {});
     vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+    // 每个测试用例前重置 logger 配置，避免相互影响
+    configureLogger({
+      defaultLevel: 'ERROR',
+      storageKey: '@seed-fe/logger:level',
+      enablePersistence: true,
+    });
   });
 
   // 在每个测试后恢复原始方法
@@ -68,7 +80,7 @@ describe('Logger 模块测试', () => {
       expect(logger.getLevel()).toBe('INFO');
     });
 
-    it('设置为 SILENT 应该不触发任何日志方法', () => {
+    it('设置为 SILENT 时 setLevel 接口仍可正常调用', () => {
       // 使用自定义 logger 以避免影响全局状态
       const testLogger = createLogger('silent-test');
 
@@ -154,6 +166,72 @@ describe('Logger 模块测试', () => {
 
       // 验证级别已正确设置
       expect(featureLogger.getLevel()).toBe('ERROR');
+    });
+
+    it('具名 logger 的 setLevel 应该同步全局级别', () => {
+      // 设置全局级别为 WARN
+      logger.setLevel('WARN', false);
+      expect(logger.getLevel()).toBe('WARN');
+
+      // 创建具名 logger
+      const authLogger = logger.getLogger('auth');
+      expect(authLogger.getLevel()).toBe('WARN'); // 继承全局
+
+      // 具名 logger 修改级别
+      authLogger.setLevel('TRACE', false);
+
+      // 验证全局级别也被修改
+      expect(logger.getLevel()).toBe('TRACE');
+      expect(authLogger.getLevel()).toBe('TRACE');
+
+      // 创建新的 logger 也应该继承新的全局级别
+      const apiLogger = logger.getLogger('api');
+      expect(apiLogger.getLevel()).toBe('TRACE');
+    });
+  });
+
+  describe('配置功能', () => {
+    it('configureLogger 应该可以更新默认日志级别', () => {
+      const targetLevel: LogLevelDesc = 'INFO';
+
+      configureLogger({ defaultLevel: targetLevel });
+
+      expect(logger.getLevel()).toBe(targetLevel);
+    });
+
+    it('当 enablePersistence=false 时不应该写入 localStorage', () => {
+      configureLogger({ enablePersistence: false });
+
+      logger.setLevel('DEBUG', true);
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it('当 storageKey=null 时不应该写入 localStorage', () => {
+      configureLogger({ storageKey: null });
+
+      logger.setLevel('DEBUG', true);
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it('当 enablePersistence=false 时不应该从 localStorage 读取', () => {
+      // 设置 localStorage 中有一个值
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue('TRACE');
+
+      // 配置为不启用持久化
+      configureLogger({
+        defaultLevel: 'ERROR',
+        enablePersistence: false,
+      });
+
+      // 应该使用 defaultLevel 而不是 localStorage 中的值
+      expect(logger.getLevel()).toBe('ERROR');
+    });
+
+    it('持久化时应该规范化字符串为大写', () => {
+      logger.setLevel('DEBUG', true);
+
+      // 验证写入的是大写字符串
+      expect(localStorage.setItem).toHaveBeenCalledWith('@seed-fe/logger:level', 'DEBUG');
     });
   });
 });

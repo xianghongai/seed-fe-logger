@@ -17,8 +17,23 @@ export interface Logger {
 
   /**
    * 设置日志级别
+   *
+   * 所有 logger（默认 + 具名）共享全局日志级别。
+   * 任何 logger 调用 setLevel 都会影响全局级别并同步所有 logger 实例。
+   *
    * @param level 日志级别：'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT'
-   * @param persistent 是否持久化设置
+   * @param persistent 是否持久化设置到 localStorage（默认 true）
+   *
+   * @example
+   * // 设置全局级别并持久化（默认行为）
+   * logger.setLevel('ERROR')
+   *
+   * // 设置全局级别但不持久化
+   * logger.setLevel('DEBUG', false)
+   *
+   * // 具名 logger 也会修改全局级别
+   * const authLogger = logger.getLogger('auth')
+   * authLogger.setLevel('TRACE')  // 影响所有 logger
    */
   setLevel: (level: LogLevelDesc, persistent?: boolean) => void;
 
