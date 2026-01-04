@@ -9,7 +9,7 @@ export default logger;
 export { configureLogger } from './config';
 export { createLogger } from './create-logger';
 // 导出类型和工具函数，方便使用者扩展
-export { Logger, LoggerConfig, LogLevel, LogLevelDesc } from './types';
+export { Logger, LoggerConfig, LogLevel, LogLevelName } from './types';
 
 // 在浏览器环境中自动暴露到全局，方便 DevTools Console 调试
 if (typeof window !== 'undefined') {

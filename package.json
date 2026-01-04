@@ -1,6 +1,6 @@
 {
   "name": "@seed-fe/logger",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A powerful and flexible logger library",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -5,6 +5,7 @@
 **目标受众**：想要贡献代码、理解内部实现、扩展功能的开发者
 
 **与现有文档的区别**：
+
 - [README.md](./README.md)：面向使用者（如何使用）
 - [DESIGN_NOTES.md](./DESIGN_NOTES.md)：面向架构师（为什么这样设计）
 - [CLAUDE.md](./CLAUDE.md)：面向 AI 助手（快速上手）
@@ -79,6 +80,7 @@ pnpm run check
 **版本**：^2.0.0
 
 **选择理由**：
+
 - 轻量级（~1KB minified+gzipped）
 - 浏览器专注（不像 Winston/Pino 是 Node.js 优先）
 - 零依赖（不引入依赖链污染）
@@ -103,6 +105,7 @@ pnpm run check
 **作用**：类型安全，提升开发体验和代码质量
 
 **配置亮点**：
+
 - `strict: true` - 启用所有严格类型检查
 - `target: "ES2020"` - 现代浏览器支持
 - `module: "ESNext"` - 支持 ESM
@@ -114,12 +117,14 @@ pnpm run check
 **作用**：打包工具，生成 CJS、ESM 和类型声明文件
 
 **为什么选择 tsup 而非 Webpack/Rollup**：
+
 - 零配置（基于 esbuild，速度极快）
 - 专注库打包（不是应用打包）
 - 自动生成类型声明文件
 - 支持多种输出格式
 
 **配置**（`tsup.config.ts`）：
+
 ```typescript
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -137,12 +142,14 @@ export default defineConfig({
 **作用**：测试框架
 
 **为什么选择 Vitest 而非 Jest**：
+
 - 原生支持 ESM（无需额外配置）
 - 与 Vite 生态集成良好
 - 速度更快（基于 esbuild）
 - API 与 Jest 兼容（低迁移成本）
 
 **配置**（`vitest.config.ts`）：
+
 ```typescript
 export default defineConfig({
   test: {
@@ -163,12 +170,14 @@ export default defineConfig({
 **作用**：代码质量工具（Linter + Formatter）
 
 **为什么选择 Biome 而非 ESLint+Prettier**：
+
 - 速度极快（Rust 实现）
 - 零配置（开箱即用）
 - 统一工具（Linter 和 Formatter 一体化）
 - 现代化设计
 
 **配置**（`biome.json`）：
+
 ```json
 {
   "linter": {
@@ -189,17 +198,20 @@ export default defineConfig({
 #### pnpm
 
 **为什么强制要求 pnpm**：
+
 - 节省磁盘空间（全局 content-addressable store）
 - 安装速度快
 - 严格的依赖管理（不会有幽灵依赖）
 - Monorepo 友好（虽然本项目是单包）
 
 **强制使用配置**（`.npmrc`）：
+
 ```
 engine-strict=true
 ```
 
 **package.json**：
+
 ```json
 {
   "engines": {
@@ -274,7 +286,7 @@ config.ts 执行
   ↓
 applyConfig() 读取 localStorage
   ↓
-currentLevel 初始化
+globalLevel 初始化
   ↓
 index.ts 导出默认 logger
   ↓
@@ -286,7 +298,7 @@ index.ts 导出默认 logger
 ```
 用户调用 logger.setLevel('DEBUG', true)
   ↓
-更新全局 currentLevel
+更新全局 globalLevel
   ↓
 遍历 allLoggers Set
   ↓
@@ -302,12 +314,14 @@ index.ts 导出默认 logger
 **职责**：定义所有 TypeScript 类型
 
 **导出**：
-- `LogLevelDesc`：日志级别字符串类型
+
+- `LogLevelName`：日志级别字符串类型
 - `LoggerConfig`：用户配置接口
 - `InternalLoggerConfig`：内部配置接口（所有字段必填）
 - `Logger`：Logger 实例接口
 
 **设计亮点**：
+
 - 区分用户配置（可选字段）和内部配置（必填字段）
 - 导出所有类型，便于用户扩展
 
@@ -316,6 +330,7 @@ index.ts 导出默认 logger
 **职责**：定义全局常量
 
 **导出**：
+
 - `DEFAULT_LOCAL_STORAGE_KEY`：默认的 localStorage 键名
 
 #### level-converter.ts
@@ -323,11 +338,13 @@ index.ts 导出默认 logger
 **职责**：日志级别转换（纯函数）
 
 **导出**：
-- `levelEnumToString()`：枚举 → 字符串
-- `levelStringToEnum()`：字符串 → 枚举
-- `parseLevelFromString()`：解析并验证字符串
+
+- `toLogLevelName()`：枚举 → 字符串
+- `toLogLevelNumber()`：字符串 → 枚举
+- `parseLogLevelName()`：解析并验证字符串
 
 **设计亮点**：
+
 - 纯函数，易于测试
 - 处理大小写不敏感（`'debug'` → `'DEBUG'`）
 - 验证非法值（返回 `null`）
@@ -337,23 +354,26 @@ index.ts 导出默认 logger
 **职责**：全局状态管理 + 配置
 
 **核心状态**：
+
 ```typescript
 let config: InternalLoggerConfig = {
-  defaultLevel: levelEnumToString(originalLog.getLevel()),
+  defaultLevel: toLogLevelName(originalLog.getLevel()),
   storageKey: DEFAULT_LOCAL_STORAGE_KEY,
   enablePersistence: true,
 };
 
-let currentLevel: LogLevelDesc = config.defaultLevel;
+let globalLevel: LogLevelName = config.defaultLevel;
 ```
 
 **导出**：
+
 - `configureLogger()`：更新配置
-- `getConfig()`：读取配置
-- `getCurrentLevel()`：读取当前级别
-- `setCurrentLevel()`：更新当前级别
+- `getLoggerConfig()`：读取配置
+- `getGlobalLevel()`：读取当前级别
+- `setGlobalLevel()`：更新当前级别
 
 **设计亮点**：
+
 - 单一状态源（Single Source of Truth）
 - 访问器模式封装内部状态
 - 启动时自动从 localStorage 恢复
@@ -363,6 +383,7 @@ let currentLevel: LogLevelDesc = config.defaultLevel;
 **职责**：Logger 实例创建 + 全局同步
 
 **核心逻辑**：
+
 ```typescript
 // 维护所有 logger 实例
 const allLoggers = new Set<originalLog.Logger>();
@@ -376,7 +397,7 @@ export const createLogger = (name = ''): Logger => {
 
   // 初始化级别（禁用 loglevel 内置持久化）
   internalLogger.setLevel(
-    levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers,
+    toLogLevelNumber(getGlobalLevel()) as originalLog.LogLevelNumbers,
     false
   );
 
@@ -391,10 +412,10 @@ export const createLogger = (name = ''): Logger => {
   }
 
   return {
-    getLevel: () => getCurrentLevel(),
-    setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
-      const numLevel = levelStringToEnum(levelStr);
-      setCurrentLevel(levelStr);
+    getLevel: () => getGlobalLevel(),
+    setLevel: (levelStr: LogLevelName, persistent = true): void => {
+      const numLevel = toLogLevelNumber(levelStr);
+      setGlobalLevel(levelStr);
 
       // 同步所有 logger
       for (const loggerInstance of allLoggers) {
@@ -402,10 +423,10 @@ export const createLogger = (name = ''): Logger => {
       }
 
       // 持久化
-      const config = getConfig();
+      const config = getLoggerConfig();
       if (persistent && config.enablePersistence && config.storageKey && typeof localStorage !== 'undefined') {
         try {
-          localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
+          localStorage.setItem(config.storageKey, toLogLevelName(numLevel));
         } catch (_e) {
           // 静默失败
         }
@@ -423,6 +444,7 @@ export const createLogger = (name = ''): Logger => {
 ```
 
 **设计亮点**：
+
 - `allLoggers` Set 确保全局级别同步
 - `methodFactory` 钩子注入前缀
 - 所有 loglevel `setLevel` 调用传 `false` 禁用内置持久化
@@ -433,10 +455,11 @@ export const createLogger = (name = ''): Logger => {
 **职责**：API 导出 + 全局变量注入
 
 **导出**：
+
 ```typescript
 export { configureLogger } from './config';
 export { createLogger } from './create-logger';
-export { LogLevel, type LogLevelDesc, type Logger, type LoggerConfig } from './types';
+export { LogLevel, type LogLevelName, type Logger, type LoggerConfig } from './types';
 
 const logger = createLogger();
 export default logger;
@@ -448,6 +471,7 @@ if (typeof window !== 'undefined') {
 ```
 
 **设计亮点**：
+
 - 默认导出 + 具名导出
 - 全局变量用于生产调试
 - 防守式检查（`typeof window !== 'undefined'`）
@@ -501,7 +525,7 @@ export const createLogger = (name = ''): Logger => {
   // 初始化 logger 的日志级别为当前全局级别
   // 禁用 loglevel 的内置持久化（传 false），由自己的逻辑控制
   internalLogger.setLevel(
-    levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers,
+    toLogLevelNumber(getGlobalLevel()) as originalLog.LogLevelNumbers,
     false
   );
 
@@ -509,9 +533,9 @@ export const createLogger = (name = ''): Logger => {
 
   return {
     // ...
-    setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
-      const numLevel = levelStringToEnum(levelStr);
-      setCurrentLevel(levelStr);
+    setLevel: (levelStr: LogLevelName, persistent = true): void => {
+      const numLevel = toLogLevelNumber(levelStr);
+      setGlobalLevel(levelStr);
 
       // 关键：遍历所有 logger 实例同步级别
       for (const loggerInstance of allLoggers) {
@@ -519,10 +543,10 @@ export const createLogger = (name = ''): Logger => {
       }
 
       // 持久化到 localStorage（由自己的逻辑控制）
-      const config = getConfig();
+      const config = getLoggerConfig();
       if (persistent && config.enablePersistence && config.storageKey && typeof localStorage !== 'undefined') {
         try {
-          localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
+          localStorage.setItem(config.storageKey, toLogLevelName(numLevel));
         } catch (_e) {
           // 忽略本地存储访问错误
         }
@@ -691,9 +715,9 @@ logger.setLevel('DEBUG', true); // 不会写入（storageKey 为 null）
 **实现代码**（`src/create-logger.ts`）：
 
 ```typescript
-setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
-  const numLevel = levelStringToEnum(levelStr);
-  setCurrentLevel(levelStr);
+setLevel: (levelStr: LogLevelName, persistent = true): void => {
+  const numLevel = toLogLevelNumber(levelStr);
+  setGlobalLevel(levelStr);
 
   // 同步到所有 logger 实例
   for (const loggerInstance of allLoggers) {
@@ -701,7 +725,7 @@ setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
   }
 
   // 持久化到 localStorage（三层控制）
-  const config = getConfig();
+  const config = getLoggerConfig();
   if (
     persistent &&                     // 层级 2：单次控制
     config.enablePersistence &&       // 层级 1：全局开关
@@ -709,7 +733,7 @@ setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
     typeof localStorage !== 'undefined' // 环境检查（SSR）
   ) {
     try {
-      localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
+      localStorage.setItem(config.storageKey, toLogLevelName(numLevel));
     } catch (_e) {
       // 静默失败：隐私模式、权限问题等不会导致崩溃
     }
@@ -747,7 +771,7 @@ logger.setLevel('DEBUG', true); // 第二个参数为 true 时会写入 localSto
 ```typescript
 // src/config.ts
 originalLog.setLevel(
-  levelStringToEnum(currentLevel) as originalLog.LogLevelNumbers,
+  toLogLevelNumber(globalLevel) as originalLog.LogLevelNumbers,
   false // 禁用 loglevel 的内置持久化
 );
 ```
@@ -757,7 +781,7 @@ originalLog.setLevel(
 ```typescript
 // src/create-logger.ts
 internalLogger.setLevel(
-  levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers,
+  toLogLevelNumber(getGlobalLevel()) as originalLog.LogLevelNumbers,
   false // 禁用 loglevel 的内置持久化
 );
 ```
@@ -904,7 +928,7 @@ open coverage/index.html
 
 ```typescript
 // src/create-logger.ts
-setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
+setLevel: (levelStr: LogLevelName, persistent = true): void => {
   console.log('[DEBUG] setLevel called:', { levelStr, persistent, allLoggersSize: allLoggers.size });
   // ...
 }
@@ -987,14 +1011,14 @@ git push --follow-tags # 推送标签触发 CI/CD
 
 ```typescript
 export interface LoggerConfig {
-  defaultLevel?: LogLevelDesc;
+  defaultLevel?: LogLevelName;
   storageKey?: string | null;
   enablePersistence?: boolean;
   logPrefix?: string; // 新增
 }
 
 export interface InternalLoggerConfig {
-  defaultLevel: LogLevelDesc;
+  defaultLevel: LogLevelName;
   storageKey: string | null;
   enablePersistence: boolean;
   logPrefix: string | null; // 新增
@@ -1005,7 +1029,7 @@ export interface InternalLoggerConfig {
 
 ```typescript
 let config: InternalLoggerConfig = {
-  defaultLevel: levelEnumToString(originalLog.getLevel()),
+  defaultLevel: toLogLevelName(originalLog.getLevel()),
   storageKey: DEFAULT_LOCAL_STORAGE_KEY,
   enablePersistence: true,
   logPrefix: null, // 默认值
@@ -1028,7 +1052,7 @@ export const configureLogger = (customConfig: LoggerConfig): void => {
 
 ```typescript
 // 在 methodFactory 中使用 logPrefix
-const config = getConfig();
+const config = getLoggerConfig();
 
 if (config.logPrefix || name) {
   const originalFactory = internalLogger.methodFactory;
@@ -1075,6 +1099,7 @@ configureLogger({
 const authLogger = logger.getLogger('auth');
 authLogger.log('test'); // 输出：[MyApp:auth] test
 ```
+
 ```
 
 ### 6.2 如何扩展日志方法
@@ -1186,7 +1211,7 @@ authLogger.setLevel('DEBUG'); // 只影响 auth 模块？
 ```typescript
 // src/create-logger.ts
 try {
-  localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
+  localStorage.setItem(config.storageKey, toLogLevelName(numLevel));
 } catch (_e) {
   // 静默失败，不影响应用运行
 }
@@ -1313,7 +1338,7 @@ if (
   typeof localStorage !== 'undefined' // 关键：检查 localStorage 是否存在
 ) {
   try {
-    localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
+    localStorage.setItem(config.storageKey, toLogLevelName(numLevel));
   } catch (_e) {
     // ...
   }
@@ -1337,7 +1362,7 @@ if (typeof window !== 'undefined') {
 #### 设计决策
 
 ```typescript
-setLevel: (level: LogLevelDesc, persistent = true) => void
+setLevel: (level: LogLevelName, persistent = true) => void
 ```
 
 默认持久化（`persistent = true`）。
@@ -1592,16 +1617,16 @@ pnpm exec conventional-changelog -p angular -i CHANGELOG.md -s
 ```typescript
 // 公开类型
 export interface Logger {
-  getLevel: () => LogLevelDesc;
-  setLevel: (level: LogLevelDesc, persistent?: boolean) => void;
+  getLevel: () => LogLevelName;
+  setLevel: (level: LogLevelName, persistent?: boolean) => void;
 }
 
 // 联合类型
-export type LogLevelDesc = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
+export type LogLevelName = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
 
 // 内部类型
 interface InternalLoggerConfig {
-  defaultLevel: LogLevelDesc;
+  defaultLevel: LogLevelName;
   storageKey: string | null;
   enablePersistence: boolean;
 }
@@ -1611,7 +1636,7 @@ interface InternalLoggerConfig {
 
 ```typescript
 // 导出类型
-export type { Logger, LoggerConfig, LogLevelDesc };
+export type { Logger, LoggerConfig, LogLevelName };
 
 // 导出值
 export { LogLevel, configureLogger, createLogger };
@@ -1620,13 +1645,13 @@ export { LogLevel, configureLogger, createLogger };
 ### 9.2 命名约定
 
 - **变量/函数**：`camelCase`
-  - 示例：`currentLevel`, `createLogger`, `getConfig`
+  - 示例：`globalLevel`, `createLogger`, `getLoggerConfig`
 - **类型/接口**：`PascalCase`
-  - 示例：`Logger`, `LoggerConfig`, `LogLevelDesc`
+  - 示例：`Logger`, `LoggerConfig`, `LogLevelName`
 - **常量**：`SCREAMING_SNAKE_CASE`
   - 示例：`DEFAULT_LOCAL_STORAGE_KEY`
 - **私有状态**：`let` + 模块作用域
-  - 示例：`let config`, `let currentLevel`
+  - 示例：`let config`, `let globalLevel`
 
 ### 9.3 注释规范
 

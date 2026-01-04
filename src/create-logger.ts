@@ -1,10 +1,9 @@
 import originalLog from 'loglevel';
-import { getConfig, getCurrentLevel, setCurrentLevel } from './config';
-import { levelEnumToString, levelStringToEnum } from './level-converter';
-import type { Logger, LogLevelDesc } from './types';
+import { getGlobalLevel, setGlobalLevel } from './config';
+import { toLogLevelNumber } from './level-converter';
+import type { Logger, LogLevelName } from './types';
 
-// 维护所有创建的 loglevel logger 实例，用于全局级别同步
-const allLoggers = new Set<originalLog.Logger>();
+const prefixedInternalLoggers = new WeakSet<object>();
 
 /**
  * 创建日志记录器
@@ -15,15 +14,12 @@ export const createLogger = (name = ''): Logger => {
   const loggerName = name || 'default';
   const internalLogger = name ? originalLog.getLogger(loggerName) : originalLog;
 
-  // 将 logger 加入集合，用于全局级别同步
-  allLoggers.add(internalLogger);
-
   // 初始化 logger 的日志级别为当前全局级别
   // 禁用 loglevel 的内置持久化（传 false），由自己的逻辑控制
-  internalLogger.setLevel(levelStringToEnum(getCurrentLevel()) as originalLog.LogLevelNumbers, false);
+  internalLogger.setLevel(toLogLevelNumber(getGlobalLevel()) as originalLog.LogLevelNumbers, false);
 
   // 如果是具名 logger，设置前缀
-  if (name) {
+  if (name && !prefixedInternalLoggers.has(internalLogger as unknown as object)) {
     const originalFactory = internalLogger.methodFactory;
     internalLogger.methodFactory = (methodName, level, loggerName) => {
       const rawMethod = originalFactory(methodName, level, loggerName);
@@ -32,39 +28,20 @@ export const createLogger = (name = ''): Logger => {
       };
     };
 
-    // 应用方法工厂更改
-    // 禁用 loglevel 的内置持久化（传 false）
-    internalLogger.setLevel(internalLogger.getLevel(), false);
+    // 应用方法工厂更改（不会改变 level，也不会触发持久化）
+    internalLogger.rebuild();
+    prefixedInternalLoggers.add(internalLogger as unknown as object);
   }
 
   // 创建符合 Logger 接口的对象
   const logger: Logger = {
-    getLevel: (): LogLevelDesc => {
+    getLevel: (): LogLevelName => {
       // 所有 logger 都返回全局级别
-      return getCurrentLevel();
+      return getGlobalLevel();
     },
 
-    setLevel: (levelStr: LogLevelDesc, persistent = true): void => {
-      const numLevel = levelStringToEnum(levelStr);
-
-      // 更新全局级别
-      setCurrentLevel(levelStr);
-
-      // 同步到所有 logger 实例 - 禁用 loglevel 的持久化
-      for (const loggerInstance of allLoggers) {
-        loggerInstance.setLevel(numLevel as originalLog.LogLevelNumbers, false);
-      }
-
-      // 持久化到 localStorage（由自己的逻辑控制）
-      const config = getConfig();
-      if (persistent && config.enablePersistence && config.storageKey && typeof localStorage !== 'undefined') {
-        try {
-          // 规范化为大写字符串
-          localStorage.setItem(config.storageKey, levelEnumToString(numLevel));
-        } catch (_e) {
-          // 忽略本地存储访问错误
-        }
-      }
+    setLevel: (levelStr: LogLevelName, persistent = true): void => {
+      setGlobalLevel(levelStr, persistent);
     },
 
     getLogger: (subName: string): Logger => {

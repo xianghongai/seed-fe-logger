@@ -300,7 +300,7 @@ internalLogger.methodFactory = (methodName, level, loggerName) => {
 **单一状态源（Single Source of Truth）**
 
 ```typescript
-let currentLevel: LogLevelDesc = 'INFO';  // 全局唯一
+let globalLevel: LogLevelName = 'INFO';  // 全局唯一
 ```
 
 所有 logger（默认 + 具名）都引用这个全局状态。
@@ -309,7 +309,7 @@ let currentLevel: LogLevelDesc = 'INFO';  // 全局唯一
 
 当任何 logger 调用 `setLevel()` 时：
 
-1. 更新全局 `currentLevel`
+1. 更新全局 `globalLevel`
 2. 同步到底层 loglevel
 3. 可选地持久化到 localStorage
 
@@ -319,15 +319,15 @@ let currentLevel: LogLevelDesc = 'INFO';  // 全局唯一
 
 为了封装全局状态，我们提供访问器：
 
-- `getConfig()` - 读取配置
-- `getCurrentLevel()` - 读取当前级别
-- `setCurrentLevel()` - 更新级别
+- `getLoggerConfig()` - 读取配置
+- `getGlobalLevel()` - 读取当前级别
+- `setGlobalLevel()` - 更新级别
 
 这让内部模块可以安全地访问全局状态，而不直接暴露变量。
 
 **访问限制**
 
-`currentLevel` 只通过本库的 API 更新：
+`globalLevel` 只通过本库的 API 更新：
 
 - 启动时 `applyConfig()`
 - 调用 `setLevel()` 时
@@ -384,7 +384,7 @@ try {
 对非法输入进行验证：
 
 ```typescript
-const parsed = parseLevelFromString(value);
+const parsed = parseLogLevelName(value);
 if (!parsed) return null;  // 非法值返回 null
 ```
 

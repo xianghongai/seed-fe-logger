@@ -4,7 +4,7 @@ import log from 'loglevel';
 export const LogLevel = log.levels;
 
 // 明确定义所有可用的日志级别字符串，使用大写形式与 loglevel 区分
-export type LogLevelDesc = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
+export type LogLevelName = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
 
 /**
  * 日志配置
@@ -13,7 +13,7 @@ export interface LoggerConfig {
   /**
    * localStorage 中没有值或值非法时使用的默认日志级别
    */
-  defaultLevel?: LogLevelDesc;
+  defaultLevel?: LogLevelName;
 
   /**
    * 持久化日志级别时使用的 localStorage key
@@ -22,8 +22,8 @@ export interface LoggerConfig {
   storageKey?: string | null;
 
   /**
-   * 是否允许持久化日志级别到 localStorage
-   * 为 false 时，即便调用 setLevel(level, true) 也不会写入 localStorage
+   * 是否启用基于 localStorage 的日志级别读写
+   * 为 false 时不会从 localStorage 读取，也不会写入
    * 默认为 true
    */
   enablePersistence?: boolean;
@@ -33,7 +33,7 @@ export interface LoggerConfig {
  * 内部日志配置（所有字段必填）
  */
 export interface InternalLoggerConfig {
-  defaultLevel: LogLevelDesc;
+  defaultLevel: LogLevelName;
   storageKey: string | null;
   enablePersistence: boolean;
 }
@@ -45,7 +45,7 @@ export interface Logger {
   /**
    * 获取当前日志级别
    */
-  getLevel: () => LogLevelDesc;
+  getLevel: () => LogLevelName;
 
   /**
    * 设置日志级别
@@ -67,7 +67,7 @@ export interface Logger {
    * const authLogger = logger.getLogger('auth')
    * authLogger.setLevel('TRACE')  // 影响所有 logger
    */
-  setLevel: (level: LogLevelDesc, persistent?: boolean) => void;
+  setLevel: (level: LogLevelName, persistent?: boolean) => void;
 
   /**
    * 获取具名日志记录器

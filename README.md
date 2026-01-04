@@ -36,7 +36,7 @@ pnpm add @seed-fe/logger
 
 获取当前日志输出等级；
 
-* 接口：`() => LogLevelDesc`
+* 接口：`() => LogLevelName`
 * 参数：无
 * 返回：当前日志级别 `'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT'` 中的一个
 * 用法：`const currentLevel = logger.getLevel()`
@@ -45,7 +45,7 @@ pnpm add @seed-fe/logger
 
 设置当前日志输出等级，一般用于生产环境临时开启日志输出；
 
-* 接口：`(level: LogLevelDesc, persistent?: boolean) => void`
+* 接口：`(level: LogLevelName, persistent?: boolean) => void`
 * 参数：
   * `level`: 日志级别 `'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT'` 中的一个，`SILENT` 不输出任何日志
   * `persistent`: 是否持久化，默认为 `true`。如果为 `true`，则日志级别会持久化到本地存储中，下次打开页面时会自动恢复，传 `false` 则只在本次会话生效
@@ -54,7 +54,7 @@ pnpm add @seed-fe/logger
 * 用法：
 
   ```typescript
-  import logger, { LogLevelDesc } from '@seed-fe/logger';
+  import logger, { LogLevelName } from '@seed-fe/logger';
 
   // 默认持久化
   logger.setLevel('DEBUG');
@@ -77,6 +77,30 @@ pnpm add @seed-fe/logger
 
 **重要**：所有 logger（包括默认 logger 和具名 logger）共享全局日志级别。具名 logger 只是在输出时添加前缀以区分模块，日志级别控制是全局统一的。
 
+## `configureLogger()`
+
+在应用启动时配置日志行为，例如默认级别、localStorage key、是否启用持久化读写等。
+
+* 接口：`(config: { defaultLevel?: LogLevelName; storageKey?: string | null; enablePersistence?: boolean }) => void`
+* 用法：
+
+  ```ts
+  import { configureLogger } from '@seed-fe/logger';
+
+  // 应用启动时初始化
+  configureLogger({
+    defaultLevel: 'ERROR',
+    storageKey: '@seed-fe/logger:level', // 默认值，可省略
+    enablePersistence: true, // 默认值，可省略
+  });
+
+  // 彻底关闭 localStorage 读写（包括“魔法值”）
+  configureLogger({
+    storageKey: null,
+    enablePersistence: false,
+  });
+  ```
+
 ## 不同环境下的日志级别
 
 ```typescript
@@ -88,6 +112,15 @@ if (isDevelopment) {
   logger.setLevel('ERROR');
 }
 ```
+
+实际使用建议：
+
+| 环境   | 推荐级别                      | 理由           |
+|:------|:---------------------------|:--------------|
+| 本地开发 | `DEBUG` 或 `TRACE`             | 查看详细调试信息     |
+| 测试环境 | `INFO`                      | 记录关键流程，减少噪音  |
+| 生产环境 | `ERROR`                     | 只记录错误，避免性能影响 |
+| 临时调试 | `TRACE` + `persistent: false` | 排查线上问题后恢复    |
 
 ## 在 Chrome DevTools Console 中调试
 
@@ -122,13 +155,13 @@ __SEED_FE_LOGGER__.setLevel('SILENT')
 import { configureLogger } from '@seed-fe/logger';
 
 configureLogger({
-  // 默认日志级别（当 localStorage 无值时使用）
+  // 默认日志级别
   defaultLevel: 'ERROR',
 
-  // 持久化的 localStorage key（设为 null 可完全禁用持久化）
+  // 持久化的 localStorage key
   storageKey: '@my-app/logger:level',
 
-  // 是否允许持久化（为 false 时即使调用 setLevel(level, true) 也不会写入）
+  // 是否允许持久化
   enablePersistence: false,
 });
 ```
@@ -140,4 +173,3 @@ configureLogger({
 本库在浏览器环境中会自动暴露全局变量 `window.__SEED_FE_LOGGER__`，这是一个有意为之的顶层副作用，用于方便生产环境调试。
 
 某些打包器在极度激进的 tree-shaking 配置下可能会保留该模块。如果你的应用对包体积极度敏感，可以配置打包器的 `sideEffects` 字段来优化。
-

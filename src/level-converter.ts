@@ -1,10 +1,10 @@
-import { LogLevel, type LogLevelDesc } from './types';
+import { LogLevel, type LogLevelName } from './types';
 
 /**
  * 将日志级别字符串转换为内部枚举数字
  * @param levelStr 日志级别字符串
  */
-export const levelStringToEnum = (levelStr: string): number => {
+export const toLogLevelNumber = (levelStr: string): number => {
   const normalizedLevel = levelStr.toUpperCase();
   switch (normalizedLevel) {
     case 'TRACE':
@@ -28,7 +28,7 @@ export const levelStringToEnum = (levelStr: string): number => {
  * 将日志级别数字转换为字符串
  * @param level 日志级别数字
  */
-export const levelEnumToString = (level: number): LogLevelDesc => {
+export const toLogLevelName = (level: number): LogLevelName => {
   switch (level) {
     case LogLevel.TRACE:
       return 'TRACE';
@@ -51,7 +51,7 @@ export const levelEnumToString = (level: number): LogLevelDesc => {
  * 从字符串安全解析日志级别
  * 非法输入返回 null，不会覆盖现有级别
  */
-export const parseLevelFromString = (value: string | null): LogLevelDesc | null => {
+export const parseLogLevelName = (value: string | null): LogLevelName | null => {
   if (!value) return null;
   const upper = value.toUpperCase();
   switch (upper) {
